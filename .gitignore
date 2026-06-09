@@ -9,3 +9,6 @@ smminer.exe
 .DS_Store
 Thumbs.db
 nul
+
+# Tooling
+reasonix.toml
