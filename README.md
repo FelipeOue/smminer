@@ -61,10 +61,10 @@ smminer/
 ├── stratum.go          # Stratum protocol (pool connection, job handling, submission)
 ├── miner.go            # Miner controllers (AonMiner, CPUMiner, MinerReceiver)
 ├── drivers/
-│   ├── aonminer.go     # AonMiner ASIC driver (init, job dispatch, read loop)
+│   ├── aonminer.go     # Very simple AonMiner ASIC driver (hardcoded init seq., job dispatch, read loop).
 │   ├── cpu.go          # CPU miner (for testing, enable via CPU_MODE constant in smminer.go)
 │   └── components/     # BM13xx chip definitions
-│       ├── bm13xx.go   # Common chip interface + ChipByName lookup
+│       ├── bm13xx.go   # Common chip interface
 │       └── bm1368.go   # BM1368 chip constants
 ├── util/
 │   ├── general.go      # Hex/bit utilities, format helpers, SHA256d validator
