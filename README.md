@@ -12,7 +12,9 @@ SMMiner is a Bitcoin mining client written in Go, targeting **AonMiner ZX1 USB A
 
 ```bash
 # Build (Linux/MacOS)
-go build -o smminer
+sudo apt update
+sudo apt install build-essential pkg-config libusb-1.0-0-dev
+go build .
 
 # Build (Windows on Msys2-Mingw)
 CGO_ENABLED=1 go build -ldflags '-linkmode external -extldflags "-static"' .
