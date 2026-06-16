@@ -276,7 +276,6 @@ func MinerReceiver() {
 		}, true)
 	}
 
-	// BITMAIN XHG
 	if len(drivers.AonFinishedWorks) > 0 {
 
 		if PoolExtraNonce1Changed {
@@ -300,23 +299,20 @@ func MinerReceiver() {
 				Version:        work.Version,
 			})
 		}
-		drivers.AonFinishedWorks = nil // Clear the slice
+		drivers.AonFinishedWorks = nil
 		drivers.AonJobMutex.Unlock()
 
 		for _, work := range worksToProcess {
-			skipSubmit := false
-
-			// Only check for exact duplicates (same nonce from same job)
+			isDuplicate := false
 			for i := range LastMinerWork {
 				if work.Nonce == LastMinerWork[i].Nonce &&
 					work.ExtraNonce2 == LastMinerWork[i].ExtraNonce2 &&
 					work.BlockTimestamp == LastMinerWork[i].BlockTimestamp {
-					skipSubmit = true
+					isDuplicate = true
 					break
 				}
 			}
-
-			if skipSubmit {
+			if isDuplicate {
 				continue
 			}
 
@@ -324,18 +320,8 @@ func MinerReceiver() {
 				LastMinerWork = LastMinerWork[len(LastMinerWork)-25:]
 			}
 
-			stratumWork := StratumWork{
-				ID:             work.ID,
-				WorkID:         work.WorkID,
-				ExtraNonce2:    work.ExtraNonce2,
-				BlockTimestamp: work.BlockTimestamp,
-				Nonce:          work.Nonce,
-				Difficulty:     work.Difficulty,
-				Version:        work.Version,
-			}
-
-			StratumSubmit(stratumWork, true)
-			LastMinerWork = append(LastMinerWork, stratumWork)
+			StratumSubmit(work, true)
+			LastMinerWork = append(LastMinerWork, work)
 		}
 	}
 }

@@ -100,17 +100,14 @@ var (
 )
 
 // scan for compatible devices and connect to the specified ports, if no port
-// is provided it will connect to all available devices. TODO: add VID/PID, Serial filtering args
+// is provided it will connect to all available devices.
 func AsicScan(devicePorts []int) []*util.SerialDevice {
-	//log.SetFlags(log.LstdFlags | log.Lmicroseconds)
-	//util.SerialContext.Close()
 	var connectedDevices []*util.SerialDevice
 	devices, infos, err := util.SerialScan(0x0403, 0x6015, "ZX01")
 	if err != nil {
 		util.AppLog("AONDRIVER", "serial scan error: "+err.Error(), "")
 		// gousb OpenDevices can return devices even when there's an
-		// error (e.g. one device failed while others opened fine).
-		// Don't return early — process whatever devices we got.
+		// error so don't return early, process whatever devices we got.
 	}
 	if len(devices) == 0 {
 		return connectedDevices
@@ -227,15 +224,8 @@ func AsicInit(device *util.SerialDevice, initialized *int) {
 		cmd = append(cmd, crc)
 
 		util.SerialWrite(device, cmd)
-
-		//log.Printf("AsicInit() sent %d bytes\n", n)
-
-		// read (remove later, this is just for testing)
 		buf, err := util.SerialRead(device, 64, time.Millisecond*100)
-		if err != nil {
-			//log.Printf("read error: %v", err)
-		} else {
-			//log.Printf("AsicInit() read %d bytes\n", len(buf))
+		if err == nil {
 			if len(buf) > 4 && chipDetected == false {
 				if buf[2] == 0x13 && buf[3] == 0x68 {
 					util.AppLog("AONMINER", fmt.Sprintf("BM1368 chip detected on device port %d", device.Info.Port), "")
@@ -406,10 +396,6 @@ func AsicReadJob(devid int, device *util.SerialDevice, poolDifficulty *float64) 
 			buf = append(buf, padding...)
 		}
 
-		//print response buf
-		//if buf[0] != 0x00 {
-		//	util.AppLog("AONMINER", fmt.Sprintf("ASIC Port %d Read %d bytes: %# x\n", device.Info.Port, len(buf), buf), "")
-		//}
 		if len(buf) >= 12 && buf[0] != 0x00 {
 			i := 0 // used to roll through buffer but was deemed unnecessary after testing
 			if buf[i] == req.PREAMBLE[1] && buf[i+1] == req.PREAMBLE[0] {
@@ -418,9 +404,7 @@ func AsicReadJob(devid int, device *util.SerialDevice, poolDifficulty *float64) 
 				for _, pendingJob := range AonPendingJob[devid] {
 					if workID == uint8(pendingJob.JobID) {
 						nonce, version, _ := bmDecodeWork(chipModel, buf[i:])
-						//fmt.Printf("Decoded asic work: jobID %d, nonce %s, version %s, asicID %d\n", workID, hex.EncodeToString(nonce), hex.EncodeToString(version), devid)
 						diff := util.SHA256dValidator(pendingJob.StratumJob, nonce, version)
-						//fmt.Printf("Nonce difficulty: %.0f\n", diff)
 						if diff < 1 {
 							AonHwErrors += 255
 						}
@@ -459,7 +443,6 @@ func AsicReadJob(devid int, device *util.SerialDevice, poolDifficulty *float64) 
 			AonJobMutex.Unlock()
 		}
 
-		//time.Sleep(20 * time.Millisecond)
 		totalHashrate := float64(0)
 		AonJobMutex.Lock()
 		if time.Since(AonDriver.LastReport) >= time.Second*120 {
@@ -513,10 +496,7 @@ func BmConstructJob(device AonDevice, stratumJob util.StratumJob) BMJob {
 			Version:        util.ReverseBytes(util.StringToHex(stratumJob.BlockVersion)),
 		}
 		merkleRoot, _ := util.ReverseWord32(stratumJob.MerkleRoot)
-		//prevBlockHash, _ := util.ReverseWord32(stratumJob.PrevBlockHash)
 		job.MerkleRoot = util.ReverseBytes(util.StringToHex(merkleRoot))
-		//job.PrevBlockHash = util.ReverseBytes(util.StringToHex(prevBlockHash))
-		// ready :)
 	}
 
 	return job
@@ -548,7 +528,9 @@ func bmDecodeWork(chipModel string, data []byte) (nonce []byte, version []byte, 
 	return nonce, version, coreID
 }
 
-// --- PLL calculation (moved from drivers/utils.go) ---
+/* Core PLL calculation
+---------------------------------------------------------------------------------------------
+*/
 
 const (
 	pllFreqMult = 25.0

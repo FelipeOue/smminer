@@ -430,16 +430,11 @@ func UsbReset(vidpid string) error {
 		if err != nil {
 			return fmt.Errorf("failed to execute usbreset command.")
 		}
-		outputStr := string(out)
-		if strings.Contains(outputStr, "'devcon'") {
-			return fmt.Errorf("devcon is not installed on the system.")
-		}
 
 		return nil
 
 	} else if runtime.GOOS == "windows" {
-		// Try pnputil first (built into Windows 10+, no extra install)
-		// Syntax: pnputil /restart-device "USB\VID_0403&PID_6015\*"
+		// PNPUTIL Syntax: pnputil /restart-device "USB\VID_0403&PID_6015\*"
 		hwID := fmt.Sprintf(`USB\VID_%s&PID_%s`, vid, pid)
 		cmd := exec.Command("pnputil", "/restart-device", hwID)
 		out, err := cmd.CombinedOutput()

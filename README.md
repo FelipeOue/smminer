@@ -43,7 +43,7 @@ Then unplug and replug your devices.
 | `-u` | *(required)* | Pool worker name / BTC address |
 | `-p` | `x` | Pool password |
 | `--aon-frequency` | `150` | ASIC frequency in MHz |
-| `--aon-job-timer` | `20` | ASIC job timing in seconds |
+| `--aon-job-timer` | `20` | ASIC job timing in milliseconds |
 | `--suggest-diff` | `500` | Suggested pool difficulty |
 | `--aon-baudrate` | `1` | Baud rate: `1` = 1M, `2` = 1.5M |
 | `--aon-usb-hub` | `1234:0001` | USB Hub VID:PID for hard resets |
@@ -59,11 +59,11 @@ Then unplug and replug your devices.
 
 ```
 smminer/
-├── smminer.go          # Entry point, CLI parsing, main loop
+├── smminer.go          # Entry point, CLI parsing, loops initialization
 ├── stratum.go          # Stratum protocol (pool connection, job handling, submission)
-├── miner.go            # Miner controllers (AonMiner, CPUMiner, MinerReceiver)
+├── miner.go            # Miner controllers (AonMiner, CPUMiner -> MinerReceiver)
 ├── drivers/
-│   ├── aonminer.go     # Very simple AonMiner ASIC driver (hardcoded init seq., job dispatch, read loop).
+│   ├── aonminer.go     # AonMiner ASICs driver
 │   ├── cpu.go          # CPU miner (for testing, enable via CPU_MODE constant in smminer.go)
 │   └── components/     # BM13xx chip definitions
 │       ├── bm13xx.go   # Common chip interface

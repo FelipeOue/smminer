@@ -13,11 +13,10 @@ import (
 )
 
 const (
-	PACKAGE_VERSION   = "0.9.6"
+	PACKAGE_VERSION   = "1.0.0"
 	ASIC_TIMEOUT_MULT = 1.0
 	ASIC_MIDSTATES    = 4
 	// CPU_MODE enables CPU mining instead of the ASIC driver.
-	// This is for TESTING only — set to false for normal operation.
 	CPU_MODE   = false
 	DEBUG_MODE = false
 	// LOG_TO_FILE enables writing log entries to log.txt on disk.
@@ -29,8 +28,7 @@ func main() {
 	util.DebugMode = DEBUG_MODE
 	util.LogToFile = LOG_TO_FILE
 
-	util.AppLog("MINER", "smminer "+PACKAGE_VERSION+" (beta) was started.", "")
-	util.AppLog("MINER", "Target is AonMiners USB devices", "")
+	util.AppLog("MINER", "smminer "+PACKAGE_VERSION+" was started.", "")
 
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
@@ -48,7 +46,7 @@ func main() {
 	flag.StringVar(&poolURL, "o", "", "pool URL")
 	flag.StringVar(&poolUser, "u", "", "username")
 	flag.StringVar(&poolPass, "p", "x", "password")
-	flag.IntVar(&aonFreq, "aon-frequency", 150, "ASIC Frequency")
+	flag.IntVar(&aonFreq, "aon-frequency", -1, "ASIC Frequency")
 	flag.IntVar(&aonJobTimer, "aon-job-timer", 20, "ASIC Job timing")
 	flag.IntVar(&suggestDiff, "suggest-diff", 500, "Suggest difficulty")
 	flag.IntVar(&baudRate, "aon-baudrate", 1, "Set Baudrate (1=1M, 2=1.5M)")
@@ -118,14 +116,15 @@ func main() {
 	}()
 
 	if CPU_MODE {
-		util.AppLog("MINER", "CPU_MODE enabled — running CPU miner for testing", "")
+		util.AppLog("MINER", "Initializing CPU driver...", "")
 		go func() {
 			CPUMiner(done)
 			close(shutdownChan)
 		}()
 	} else {
 		StratumSetVersionMask(util.DEFAULT_VERSION_MASK)
-		if aonFreq != -1 && aonJobTimer != -1 {
+		if aonFreq != -1 {
+			util.AppLog("MINER", "Initializing aonminer driver...", "")
 			drivers.AonUserConfig.Frequency = aonFreq
 			drivers.AonUserConfig.JobTimer = aonJobTimer
 			drivers.AonUserConfig.BaudRate = baudRate

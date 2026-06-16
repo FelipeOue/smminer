@@ -121,7 +121,7 @@ func StratumSubscribe() (int, error) {
 
 	var isReconnection = false
 	var params []string
-	params = append(params, "NerdMinerV2") // for testing
+	params = append(params, "smminer/"+PACKAGE_VERSION) // for testing
 
 	util.AppLog("STRATUM", "Subscribing to pool...", "")
 

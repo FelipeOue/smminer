@@ -33,17 +33,3 @@ var BM1397 = BM13xxRequest{
 	VERSION_MASK:            0xA4,
 	REG_A8:                  0xA8,
 }
-
-type BM1397JobCommand struct {
-	Preamble       [2]byte
-	Command        [2]byte
-	JobID          uint8
-	MidstatesCount uint8
-	StartingNonce  [4]byte
-	NBits          [4]byte
-	NTime          [4]byte
-	MerkleRoot     [32]byte
-	PrevBlockHash  [32]byte
-	Version        [4]byte
-	CRC16          [4]byte
-}
