@@ -35,17 +35,21 @@ type BM13xxRequest struct {
 	FREQ_MULT  float64
 
 	// Memory Addresses
+	CHIP_ADDR               byte
+	PLL0_PARAMETER          byte
+	ROLLING_RANGE           byte
+	TICKET_MASK             byte
+	MISC_CONTROL            byte
+	ORDERED_CLOCK_ENABLE    byte
+	FAST_UART_CONFIGURATION byte
+	CORE_REGISTER_CONTROL   byte
+	ANALOG_MUX_CONTROL      byte
+	DRIVE_STRENGTH          byte
+	PLL3_PARAMETER          byte
 	CLOCK_ORDER_CONTROL_0   byte
 	CLOCK_ORDER_CONTROL_1   byte
-	ORDERED_CLOCK_ENABLE    byte
-	CORE_REGISTER_CONTROL   byte
-	PLL0_PARAMETER          byte
-	PLL3_PARAMETER          byte
-	FAST_UART_CONFIGURATION byte
-	MISC_CONTROL            byte
-	TICKET_MASK             byte
-	DRIVE_STRENGTH          byte
-	ANALOG_MUX_CONTROL      byte
+	VERSION_MASK            byte
+	REG_A8                  byte
 }
 
 // ChipByName returns the chip request descriptor for a given chip model string.
