@@ -109,18 +109,13 @@ func AonMiner(done chan struct{}) error {
 			if len(devices) == 0 {
 				consecutiveFailures++
 				// On first failure or after 3 consecutive failures,
-				// forcibly cycle the USB device via the OS. This
-				// clears stale driver claims (e.g. FTDI VCP holding
-				// the interface) — the software equivalent of a
-				// physical replug.
+				// forcibly cycle the USB device with terminal commands.
 				if consecutiveFailures == 1 || consecutiveFailures >= 3 {
 					util.AppLog("MINER", fmt.Sprintf("Scan failure #%d, cycling USB device 0403:6015...", consecutiveFailures), "")
 					err := util.UsbReset("0403:6015")
 					if err != nil {
 						util.AppLog("MINER", "USB reset error: "+err.Error(), "")
 						time.Sleep(3 * time.Second)
-						// Don't reset counter on failure — we'll
-						// retry the reset next cycle.
 					} else {
 						util.AppLog("MINER", "USB reset OK, waiting for enumeration...", "")
 						time.Sleep(10 * time.Second)
@@ -194,7 +189,6 @@ func AonMiner(done chan struct{}) error {
 
 		// edit job for each device
 		for i := range drivers.AonDriver.ConnectedDevices {
-			// Each device already has a unique ExtraNonce2, just increment it further
 			extraNonce2Int, err := strconv.ParseUint(stratumJobBuffer[i].ExtraNonce2, 16, 32)
 			if err == nil {
 				// Increment by a larger value to ensure uniqueness across iterations
@@ -233,7 +227,7 @@ func MinerReceiver() {
 	// CPU
 	// restart mining if job need change
 	if LastStratumJob.ForgetSubmits {
-		//appLog("MINER", "New job, restarting active thread(s)", "")
+		util.AppLog("MINER", "New job, pool requested job change.", "")
 		drivers.StopCPUMining()
 		StratumMutex.Lock()
 		LastStratumJob.ForgetSubmits = false
