@@ -1,6 +1,8 @@
 # SMMiner
 
-SMMiner is a Bitcoin mining client written in Go, targeting **AonMiner ZX1 USB ASIC** devices (based on BM1368). It uses the Stratum protocol to connect to mining pools.
+**Idiomas / Languages:** [English](README.md) | [Português (Brasil)](README.pt-BR.md)
+
+SMMiner is a Bitcoin mining client written in Go, targeting **AonMiner ZX1 USB ASIC** devices (based on BM1368). It uses the Stratum V1 protocol to connect to mining pools.
 
 ## Hardware & Dependencies
 - AonMiners ZX1 USB ASIC (FTDI 0403:6015)
@@ -81,6 +83,13 @@ smminer/
 ```
 
 Requires Go 1.24+.
+
+## References
+
+- Stratum V1 protocol: https://reference.cash/
+- SHA-256 mining core and validations: https://learnmeabitcoin.com/
+- Registers: [cgminer](https://github.com/ckolivas/cgminer) and [esp-miner](https://github.com/bitaxeorg/ESP-Miner) 
+
 
 ## License
 
