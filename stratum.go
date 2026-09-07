@@ -121,7 +121,7 @@ func StratumSubscribe() (int, error) {
 
 	var isReconnection = false
 	var params []string
-	params = append(params, "smminer/"+PACKAGE_VERSION) // for testing
+	params = append(params, "smminer/"+PACKAGE_VERSION)
 
 	util.AppLog("STRATUM", "Subscribing to pool...", "")
 
@@ -185,7 +185,7 @@ func StratumSubscribe() (int, error) {
 }
 
 func StratumAuthenticate(username, password string) error {
-	// send and save credentials to later use
+	// send and save credentials for later
 	_, err := stratumWrite(StratumRequest{
 		ID:     "FFFF",
 		Method: "mining.authorize",
@@ -199,7 +199,7 @@ func StratumAuthenticate(username, password string) error {
 	// some pools will send mining.notify with a job and not
 	// answer the authentication request so...
 	response, err := stratumRead()
-	if len(response.Result) == 0 && len(response.Params) > 0 {
+	if len(response.Result) == 0 {
 		util.AppLog("STRATUM", "Pool skipped credential validation!", "")
 		return err
 	}
@@ -214,20 +214,41 @@ func StratumAuthenticate(username, password string) error {
 	return err
 }
 
-// request the pool to change the difficulty, not garanteed to be accepted.
+// request the pool to change the difficulty, not guaranteed to be accepted.
 func StratumSuggestDiff(difficulty float64) {
-	util.AppLog("STRATUM", "Suggesting difficulty "+strconv.FormatFloat(difficulty, 'f', -1, 64), "")
-	_, err := stratumWrite(StratumRequest{
-		ID:     "FFFF",
-		Method: "mining.suggest_difficulty",
-		Params: []float64{difficulty},
-	})
-	if err != nil {
-		util.AppLog("STRATUM", "Failed to suggest difficulty: "+strconv.FormatFloat(difficulty, 'f', -1, 64), "")
-	}
+	// a small loop to adjust diff
+	go func() {
+		tries := 1
+		for {
+			util.AppLog("STRATUM", "Suggesting difficulty "+strconv.FormatFloat(difficulty, 'f', -1, 64)+" ("+strconv.FormatInt(int64(tries), 16)+"/3)", "")
+			_, err := stratumWrite(StratumRequest{
+				ID:     "FFFF",
+				Method: "mining.suggest_difficulty",
+				Params: []float64{difficulty},
+			})
+			if err != nil {
+				util.AppLog("STRATUM", "Failed to suggest difficulty: "+strconv.FormatFloat(difficulty, 'f', -1, 64), "")
+			}
+			time.Sleep(time.Second * 10)
+			tries++
+			if tries > 3 {
+				return
+			}
+		}
+	}()
 }
 
 var LastBlockHeight uint64
+
+// merkleBranchesDebug formats the merkle branch list for the debug log.
+// The branch array can be EMPTY on pools that send coinbase-only templates,
+// so avoid indexing [0] which would panic.
+func merkleBranchesDebug(branches []string) string {
+	if len(branches) == 0 {
+		return "(empty)"
+	}
+	return branches[0] + "..."
+}
 
 // receives notifications from pool and update the global variables.
 func StratumReceiver() error {
@@ -240,7 +261,9 @@ func StratumReceiver() error {
 			merkleBranches[i] = branch.(string)
 		}
 
-		if len(merkleBranches) > 0 && response.Params[1].(string) != "" {
+		// Some pools send jobs with an EMPTY merkle branch array
+		// Such jobs are still valid, so only require a non-empty prevhash.
+		if response.Params[1].(string) != "" {
 			blockHeightHex := response.Params[2].(string)[86 : 86+6]
 			blockHeight, _ := strconv.ParseUint(util.ReverseHexString(blockHeightHex), 16, 32)
 			if LastBlockHeight != blockHeight {
@@ -268,7 +291,7 @@ func StratumReceiver() error {
 				"PrevBlockHash: " + LastStratumJob.PrevBlockHash,
 				"CoinbasePrefix: " + LastStratumJob.CoinbasePrefix[:30] + "...",
 				"CoinbaseSuffix: " + LastStratumJob.CoinbaseSuffix[:30] + "...",
-				"MerkleBranches: " + LastStratumJob.MerkleBranches[0] + "...",
+				"MerkleBranches: " + merkleBranchesDebug(LastStratumJob.MerkleBranches),
 				"BlockVersion: " + LastStratumJob.BlockVersion,
 				"NetworkDifficulty: " + LastStratumJob.NetworkTarget,
 				"BlockTimestamp: " + LastStratumJob.BlockTimestamp,
@@ -306,8 +329,10 @@ func StratumReceiver() error {
 						PoolRejections = 0
 					} else {
 						util.AppLog("STRATUM", "Share rejected "+submit.Nonce+" "+shareDiff+"/"+strconv.FormatFloat(PoolDifficulty, 'f', -1, 64), "")
-						if len(response.Error) > 1 && response.Error[0] != nil {
-							util.AppLog("STRATUM", "Pool error message: "+response.Error[0].(string), "")
+						if len(response.Error) > 1 {
+							if msg, ok := response.Error[1].(string); ok {
+								util.AppLog("STRATUM", "Pool error message: "+msg, "")
+							}
 						}
 						PoolRejections++
 					}
@@ -384,7 +409,7 @@ func StratumSubmit(work StratumWork, versionRolling bool) error {
 	return err
 }
 
-// update the current job with a incremented extranonce2
+// update the current job with an incremented extranonce2
 func StratumNonce2Increment() error {
 	StratumMutex.Lock()
 	// convert to uint32 and increment the ExtraNonce2 on global stratum job
@@ -462,5 +487,4 @@ func stratumResponseFormat(rawResponse *string) {
 	*rawResponse = re.ReplaceAllString(*rawResponse, `"result":[$1]`)
 	*rawResponse = re2.ReplaceAllString(*rawResponse, `"error":[$1]`)
 	util.AppDebug("stratumResponseFormat", "  "+*rawResponse, "")
-	//log.Println("stratumResponseFormat", "  "+*rawResponse)
 }

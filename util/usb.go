@@ -251,7 +251,12 @@ func isPortBusy(serial string) bool {
 		}
 	}
 	if len(portName) < 1 {
-		return true
+		// The miner opens the FTDI directly via libusb (gousb), so the
+		// absence of an OS serial node (e.g. ftdi_sio not bound, /dev/ttyUSB*
+		// missing) does NOT mean the device is busy. Report "not busy" so the
+		// device is kept and opened through the raw USB interface.
+		//return true
+		return false
 	}
 	// solve problem with windows (COM10+)
 	if runtime.GOOS == "windows" {

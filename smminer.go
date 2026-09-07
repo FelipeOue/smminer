@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	PACKAGE_VERSION   = "1.0.0"
+	PACKAGE_VERSION   = "1.1.0"
 	ASIC_TIMEOUT_MULT = 1.0
 	ASIC_MIDSTATES    = 4
 	// CPU_MODE enables CPU mining instead of the ASIC driver.
@@ -100,7 +100,6 @@ func main() {
 	}()
 	time.Sleep(1 * time.Second)
 	StratumSuggestDiff(float64(suggestDiff))
-
 	StratumWaitJob()
 
 	done := make(chan struct{})
@@ -139,7 +138,7 @@ func main() {
 	go func() {
 		for {
 			MinerReceiver()
-			time.Sleep(50 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
@@ -161,7 +160,7 @@ func main() {
 
 	go func() {
 		for {
-			// handles diconnection
+			// handles disconnection
 			if PoolDisconnection {
 				util.AppLog("STRATUM", "Reconnecting to pool...", "")
 				StratumMutex.Lock()
@@ -186,7 +185,7 @@ func main() {
 			if PoolDisconnection == false && StratumMutex.TryLock() {
 				StratumMutex.Unlock()
 			}
-			time.Sleep(time.Millisecond * 500)
+			time.Sleep(1 * time.Second)
 		}
 	}()
 

@@ -403,7 +403,8 @@ func AsicReadJob(devid int, device *util.SerialDevice, poolDifficulty *float64) 
 				workID := uint8((buf[i+7] & 0xf0) >> 1)
 				for _, pendingJob := range AonPendingJob[devid] {
 					if workID == uint8(pendingJob.JobID) {
-						nonce, version, _ := bmDecodeWork(chipModel, buf[i:])
+						baseVersion := binary.BigEndian.Uint32(util.StringToHex(pendingJob.StratumJob.BlockVersion))
+						nonce, version, _ := bmDecodeWork(chipModel, buf[i:], baseVersion, util.DEFAULT_VERSION_MASK)
 						diff := util.SHA256dValidator(pendingJob.StratumJob, nonce, version)
 						if diff < 1 {
 							AonHwErrors += 255
@@ -503,7 +504,7 @@ func BmConstructJob(device AonDevice, stratumJob util.StratumJob) BMJob {
 }
 
 // decode job responses from Bitmain chips
-func bmDecodeWork(chipModel string, data []byte) (nonce []byte, version []byte, coreID uint) {
+func bmDecodeWork(chipModel string, data []byte, baseVersion uint32, versionMask uint32) (nonce []byte, version []byte, coreID uint) {
 	switch chipModel {
 	case "BM1368":
 		// strip out jobID, version and nonce from data
@@ -519,7 +520,9 @@ func bmDecodeWork(chipModel string, data []byte) (nonce []byte, version []byte, 
 		versionValue := binary.BigEndian.Uint16(versionBytes)
 		versionBits := uint32(versionValue) << 13
 
-		version = util.PadLeft((0x20000000 | versionBits), 4)
+		// Rebuild the full block version used by the chip.
+		fullVersion := (baseVersion &^ versionMask) | (versionBits & versionMask)
+		version = util.PadLeft(fullVersion, 4)
 		nonce = util.ReverseBytes(util.PadLeft(binary.BigEndian.Uint32(nonceBytes), 4))
 		coreID = coreGroup*15 + coreID // not so sure about 15 as the total cores in group
 	default:

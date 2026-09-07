@@ -19,6 +19,6 @@ aon_baudrate=2
 # USB Hub for automatic reset (may require root)
 # Knup HB505/506    =  35d6:2510
 # Ampere V3         =  05e3:0608
-aon_usb_hub="35d6:2510"
+aon_usb_hub="1234:0001"
 
 ./smminer -o "$pool_url" -u "$username" -p "$password" --aon-frequency "$frequency" -aon-job-timer "$aon_job_timer" -suggest-diff "$difficulty" -aon-baudrate "$aon_baudrate" -aon-usb-hub "$aon_usb_hub"
